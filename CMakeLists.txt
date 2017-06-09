@@ -66,17 +66,17 @@ option(MSVC_STHREADED_RT "MSVC: Build with single-threaded static runtime libs (
 function(add_sources)
   get_property(is_defined GLOBAL PROPERTY SRCS_LIST DEFINED)
   if(NOT is_defined)
-    define_property(GLOBAL PROPERTY SRCS_LIST
-      BRIEF_DOCS "List of source files"
-      FULL_DOCS "List of all source files in the entire project")
+	define_property(GLOBAL PROPERTY SRCS_LIST
+	  BRIEF_DOCS "List of source files"
+	  FULL_DOCS "List of all source files in the entire project")
   endif()
   # make absolute paths
   set(SRCS)
   foreach(s IN LISTS ARGN)
-    if(NOT IS_ABSOLUTE "${s}")
-      get_filename_component(s "${s}" ABSOLUTE)
-    endif()
-    list(APPEND SRCS "${s}")
+	if(NOT IS_ABSOLUTE "${s}")
+	  get_filename_component(s "${s}" ABSOLUTE)
+	endif()
+	list(APPEND SRCS "${s}")
   endforeach()
   # append to global list
   set_property(GLOBAL APPEND PROPERTY SRCS_LIST "${SRCS}")
@@ -264,16 +264,9 @@ else()
 	set(_library_dir lib)
 endif()
 
-set(INCLUDE_INSTALL_ROOT_DIR ${CMAKE_INSTALL_PREFIX}/include)
-
+set(INCLUDE_INSTALL_ROOT_DIR "include")
 set(INCLUDE_INSTALL_DIR ${INCLUDE_INSTALL_ROOT_DIR}/yaml-cpp)
-set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/${_library_dir}${LIB_SUFFIX}")
-
-set(_INSTALL_DESTINATIONS
-	RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
-	LIBRARY DESTINATION ${LIB_INSTALL_DIR}
-	ARCHIVE DESTINATION "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}"
-)
+set(LIB_INSTALL_DIR "${_library_dir}${LIB_SUFFIX}")
 
 
 ###
@@ -308,7 +301,15 @@ if(MSVC)
 	endif()
 endif()
 
-install(TARGETS yaml-cpp EXPORT yaml-cpp-targets ${_INSTALL_DESTINATIONS})
+install(
+	TARGETS yaml-cpp
+	EXPORT yaml-cpp-targets
+	RUNTIME DESTINATION bin
+	LIBRARY DESTINATION ${LIB_INSTALL_DIR}
+	ARCHIVE DESTINATION "lib${LIB_SUFFIX}"
+	INCLUDES DESTINATION ${INCLUDE_INSTALL_ROOT_DIR}
+)
+
 install(
 	DIRECTORY ${header_directory}
 	DESTINATION ${INCLUDE_INSTALL_DIR}
@@ -316,40 +317,25 @@ install(
 )
 
 export(
-    TARGETS yaml-cpp
-    FILE "${PROJECT_BINARY_DIR}/yaml-cpp-targets.cmake")
+	TARGETS yaml-cpp
+	FILE "yaml-cpp-targets.cmake")
+
 export(PACKAGE yaml-cpp)
+
 set(EXPORT_TARGETS yaml-cpp CACHE INTERNAL "export targets")
 
-set(CONFIG_INCLUDE_DIRS "${YAML_CPP_SOURCE_DIR}/include")
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/yaml-cpp-config.cmake.in
-	"${PROJECT_BINARY_DIR}/yaml-cpp-config.cmake" @ONLY)
-
 if(WIN32 AND NOT CYGWIN)
-	set(INSTALL_CMAKE_DIR ${CMAKE_INSTALL_PREFIX}/CMake)
+	set(INSTALL_CMAKE_DIR CMake)
 else()
 	set(INSTALL_CMAKE_DIR ${LIB_INSTALL_DIR}/cmake/yaml-cpp)
 endif()
 
-file(RELATIVE_PATH REL_INCLUDE_DIR "${INSTALL_CMAKE_DIR}" "${INCLUDE_INSTALL_ROOT_DIR}")
-set(CONFIG_INCLUDE_DIRS "\${YAML_CPP_CMAKE_DIR}/${REL_INCLUDE_DIR}")
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/yaml-cpp-config.cmake.in
-	"${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/yaml-cpp-config.cmake" @ONLY)
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/yaml-cpp-config-version.cmake.in
-	"${PROJECT_BINARY_DIR}/yaml-cpp-config-version.cmake" @ONLY)
-
 install(FILES
-	"${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/yaml-cpp-config.cmake"
-	"${PROJECT_BINARY_DIR}/yaml-cpp-config-version.cmake"
+	"${CMAKE_SOURCE_DIR}/yaml-cpp-config.cmake"
+	"${CMAKE_SOURCE_DIR}/yaml-cpp-config-version.cmake"
 	DESTINATION "${INSTALL_CMAKE_DIR}" COMPONENT dev)
-install(EXPORT yaml-cpp-targets DESTINATION ${INSTALL_CMAKE_DIR})
 
-if(UNIX)
-	set(PC_FILE ${CMAKE_BINARY_DIR}/yaml-cpp.pc)
-	configure_file("yaml-cpp.pc.cmake" ${PC_FILE} @ONLY)
-	install(FILES ${PC_FILE} DESTINATION ${LIB_INSTALL_DIR}/pkgconfig)
-endif()
+install(EXPORT yaml-cpp-targets DESTINATION ${INSTALL_CMAKE_DIR})
 
 
 ###
